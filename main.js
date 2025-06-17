@@ -1,8 +1,12 @@
+import StartMenu from "/scenes/StartMenu.js";
+import Game from "/scenes/Game.js";
+import EndMenu from "/scenes/EndMenu.js";
+
 // Create a new Phaser config object
 const config = {
   type: Phaser.AUTO,
   width: 600,
-  height: 600,
+  height: 400,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -18,14 +22,14 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 200 },
+      gravity: { y: 300 },
       debug: true,
     },
   },
   // List of scenes to load
   // Only the first scene will be shown
   // Remember to import the scene before adding it to the list
-  scene: [StartMenu, Game, EndMenu],
+  scene: [/*StartMenu, */ Game, EndMenu],
 };
 
 // Create a new Phaser game instance
