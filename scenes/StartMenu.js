@@ -1,4 +1,4 @@
-export default class StartMenu extends Phaser.Scene {
+export default class startMenu extends Phaser.Scene {
   constructor() {
     super("startMenu");
   }
@@ -15,7 +15,7 @@ export default class StartMenu extends Phaser.Scene {
 
   create() {
     this.add.image(0, 0, "fondo").setOrigin(0, 0);
-    this.addText()
+    this.addText();
 
     //adding triggers for key-buttons
     this.cursors = this.input.keyboard.createCursorKeys();
