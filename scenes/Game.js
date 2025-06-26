@@ -12,7 +12,13 @@ export default class Game extends Phaser.Scene {
   }
 
   preload() {
-    this.load.tilemapTiledJSON("map", "public/assets/tilemaps/Tilemap.json");
+    this.load.tilemapTiledJSON(
+      "map",
+      "public/assets/tilemaps/Tilemap Cat-astrophe.json"
+    );
+    this.load.image("background", "public/assets/Paralax.png");
+    this.load.image("walls", "public/assets/Paredes.png");
+    this.load.image("platforms", "public/assets/Plataformas.png");
     this.load.image("mapAssets", "public/assets/texture.png");
     this.load.image("colecionable", "public/assets/star.png");
     this.load.image("bomb", "public/assets/bomb.png");
@@ -25,25 +31,19 @@ export default class Game extends Phaser.Scene {
   create() {
     //making map objects/layers
     const map = this.make.tilemap({ key: "map" });
-    const background = map.addTilesetImage("texture", "mapAssets");
-    const tileset = map.addTilesetImage("texture", "mapAssets");
+    const paralax = map.addTilesetImage("Paralax", "background");
+    const paredes = map.addTilesetImage("Paredes", "walls");
+    const plataformas = map.addTilesetImage("Plataformas", "platforms");
 
-    const belowLayer = map
-      .createLayer("Fondo", background, 0, 0)
-      .setScale(1.5).refreshBody;
-    const platformLayer = map
-      .createLayer("Plataformas", tileset, 0, 0)
-      .setScale(1.5);
-    const wallLayer = map
-      .createLayer("Paredes", tileset, 0, 0)
-      .setScale(1.5)
-      .setTint(0xff0c01);
+    const belowLayer = map.createLayer("Paralax", paralax, 0, 0);
+    const platformLayer = map.createLayer("Plataformas", plataformas, 0, 0);
+    const wallLayer = map.createLayer("Paredes", paredes, 0, 0);
     const objectsLayer = map.getObjectLayer("Objetos");
 
     //Getting player spawn location
     const spawnPoint = map.findObject(
       "Objetos",
-      (obj) => obj.name === "jugador"
+      (obj) => obj.name === "Spawn_Jugador"
     );
 
     //making the player charater
@@ -51,6 +51,7 @@ export default class Game extends Phaser.Scene {
     this.player.setBounceX(0.2);
     this.player.setCollideWorldBounds(false);
     this.player.isTouchingDown = false;
+    this.player.hitWall = 0;
 
     //making the player charater´s animations
     this.anims.create({
@@ -65,9 +66,14 @@ export default class Game extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
+    this.anims.create({
+      key: "turn",
+      frames: [{ key: "player", frame: 4 }],
+      frameRate: 20,
+    });
 
     //setting colliders between player & platforms/walls
-    platformLayer.setCollisionByProperty({ Colision: true });
+    platformLayer.setCollisionByProperty({ Colisionable: true });
 
     this.physics.add.collider(this.player, platformLayer);
 
@@ -81,7 +87,7 @@ export default class Game extends Phaser.Scene {
       this
     );
 
-    wallLayer.setCollisionByProperty({ Colision: true });
+    wallLayer.setCollisionByProperty({ Colisionable: true });
     this.physics.add.collider(this.player, wallLayer, this.hitWall, null, this);
 
     //Create timer
@@ -99,14 +105,18 @@ export default class Game extends Phaser.Scene {
     this.timer = this.time.addEvent({
       delay: 1000,
       callback: () => {
+        if (this.player.hitWall > 0) {
+          this.player.hitWall--;
+          this.player.setVelocityX(0);
+        }
         this.timePassed++;
         this.timeLeftSeconds--;
         this.timerText.setText(
           `time: ${this.timeLeftMinutes}:${this.timeLeftSeconds}`
         );
-        if (this.scoreReward == 50) {
+        if (this.scoreReward > 50) {
           this.scoreReward -= 50;
-          this.timeLeftSeconds += 20;
+          this.timeLeftSeconds += 10;
         }
         if (this.timeLeftSeconds > 60) {
           this.timeLeftSeconds -= 60;
@@ -131,21 +141,17 @@ export default class Game extends Phaser.Scene {
     objectsLayer.objects.forEach((objData) => {
       const { x = 0, y = 0, name, type } = objData;
       switch (type) {
-        case "coleccionable": {
+        case "Coleccionable": {
           //Getting posible locations for collectibles to spawn
           this.spawnLocations.push(objData);
           break;
         }
       }
     });
-    this.collectableMaxAmount = 0;
     this.collectableSpawner = this.time.addEvent({
       delay: this.spawnTime,
       callback: () => {
-        this.collectableMaxAmount++;
-        if (this.collectableMaxAmount <= 5) {
-          this.spawnLogic();
-        }
+        this.spawnLogic();
       },
       loop: true,
     });
@@ -186,15 +192,15 @@ export default class Game extends Phaser.Scene {
       callback: () => {
         this.spawnTime -= 500;
         this.spawnTimeNeg -= 1000;
+        console.log(this.spawnTime);
+        console.log(this.spawnTimeNeg);
+
         this.time.removeEvent(this.collectableSpawner);
         this.time.removeEvent(this.obstacleSpawner);
         this.collectableSpawner = this.time.addEvent({
           delay: this.spawnTime,
           callback: () => {
-            this.collectableMaxAmount++;
-            if (this.collectableMaxAmount <= 5) {
-              this.spawnLogic();
-            }
+            this.spawnLogic();
           },
           loop: true,
         });
@@ -206,7 +212,7 @@ export default class Game extends Phaser.Scene {
           loop: true,
         });
       },
-      loop: 2,
+      repeat: 2,
     });
 
     this.scoreText = this.add.text(
@@ -226,6 +232,7 @@ export default class Game extends Phaser.Scene {
       map.widthInPixels * 1.5,
       map.heightInPixels * 1.5
     );
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.cameras.main.startFollow(this.player);
 
     //adding triggers for key-buttons
@@ -235,34 +242,37 @@ export default class Game extends Phaser.Scene {
 
   update() {
     //player character movement logic
-    if (this.cursors.left.isDown) {
+    if (this.player.hitWall === 0 && this.cursors.left.isDown) {
       if (this.timePassed <= 40) {
         this.player.setVelocityX(-200);
         this.player.anims.play("left", true);
       } else if (this.timePassed <= 80) {
-        this.player.setVelocityX(-300);
+        this.player.setVelocityX(-250);
         this.player.anims.play("left", true);
       } else if (this.timePassed > 80) {
-        this.player.setVelocityX(-400);
+        this.player.setVelocityX(-300);
         this.player.anims.play("left", true);
       }
-    } else if (this.cursors.right.isDown) {
+    } else if (this.player.hitWall === 0 && this.cursors.right.isDown) {
       if (this.timePassed <= 40) {
         this.player.setVelocityX(200);
         this.player.anims.play("right", true);
       } else if (this.timePassed <= 80) {
-        this.player.setVelocityX(300);
+        this.player.setVelocityX(250);
         this.player.anims.play("right", true);
       } else if (this.timePassed > 80) {
-        this.player.setVelocityX(400);
+        this.player.setVelocityX(300);
         this.player.anims.play("right", true);
       }
     }
 
     //player character jump logic
-    if (this.player.isTouchingDown == true && this.cursors.up.isDown) {
-      this.player.setVelocityY(-280);
-      console.log(this.player.isTouchingDown);
+    if (
+      this.player.isTouchingDown == true &&
+      this.cursors.up.isDown &&
+      this.player.hitWall === 0
+    ) {
+      this.player.setVelocityY(-390);
       this.player.isTouchingDown = false;
     }
 
@@ -286,21 +296,30 @@ export default class Game extends Phaser.Scene {
       this.cameras.main.worldView.x + 16,
       this.cameras.main.worldView.y + 36
     );
+
+    if (this.player.hitWall > 0) {
+      this.player.setTint(0xff0c01);
+    } else {
+      this.player.clearTint();
+    }
   }
 
   spawnLogic() {
-    const collectablesPosition = Phaser.Math.RND.pick(this.spawnLocations);
-    const collectable = this.collectables.create(
-      collectablesPosition.x,
-      collectablesPosition.y,
-      "colecionable"
-    );
-    collectable.value = 10;
+    console.log("cantidad ", this.collectables.countActive());
+    if (this.collectables.countActive(true) < 10) {
+      const collectablesPosition = Phaser.Math.RND.pick(this.spawnLocations);
+
+      const collectable = this.collectables.create(
+        collectablesPosition.x,
+        collectablesPosition.y,
+        "colecionable"
+      );
+      collectable.value = 10;
+    }
   }
 
   touchCollectable(player, collectable) {
     collectable.disableBody(true, true);
-    this.collectableMaxAmount--;
     this.score += 10;
     this.scoreReward += 10;
     this.scoreText.setText(`Score: ${this.score}`);
@@ -308,11 +327,7 @@ export default class Game extends Phaser.Scene {
 
   spawnLogicNegative(platformLayer) {
     const obstacles = this.negativeObj
-      .create(
-        Phaser.Math.Between(100, 350),
-        Phaser.Math.Between(16, 280),
-        "bomb"
-      )
+      .create(Phaser.Math.Between(9, 1524), Phaser.Math.Between(9, 768), "bomb")
       .setScale(1.5);
     obstacles.setCollideWorldBounds(false);
     obstacles.setBounce(1);
@@ -344,6 +359,9 @@ export default class Game extends Phaser.Scene {
   }
 
   hitWall() {
-    this.scene.start("endMenu", { score: this.score });
+    this.timeLeftSeconds -= 20;
+    this.player.anims.play("turn", true);
+    this.player.hitWall += 2;
+    this.player.setVelocityY(0);
   }
 }
