@@ -35,4 +35,4 @@ const config = {
 };
 
 // Create a new Phaser game instance
-window.game = new Phaser.game(config);
+window.game = new Phaser.Game(config);
