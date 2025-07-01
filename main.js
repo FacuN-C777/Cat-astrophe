@@ -1,4 +1,4 @@
-import startMenu from "./scenes/startMenu.js";
+import startMenu from "./scenes/openMenu.js";
 import game from "./scenes/game.js";
 import endMenu from "./scenes/endMenu.js";
 
@@ -23,7 +23,7 @@ const config = {
     default: "arcade",
     arcade: {
       gravity: { y: 300 },
-      debug: true,
+      debug: false,
     },
   },
   render: { pixelArt: true, antialias: false, roundPixels: true },
@@ -31,7 +31,7 @@ const config = {
   // List of scenes to load
   // Only the first scene will be shown
   // Remember to import the scene before adding it to the list
-  scene: [game, endMenu, startMenu],
+  scene: [startMenu, game, endMenu],
 };
 
 // Create a new Phaser game instance

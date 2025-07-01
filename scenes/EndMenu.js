@@ -5,36 +5,45 @@ export default class endMenu extends Phaser.Scene {
 
   init(data) {
     this.score = data.score || 0;
+    this.time = data.timePassed || 0;
   }
 
   preload() {
-    this.load.image("cielo", "public/assets/Cielo.png");
+    this.load.image("gameOver", "public/assets/Game over Cat-astrophe.png");
   }
 
   create() {
     this.add
       .image(
         this.cameras.main.worldView.x + this.cameras.main.centerX,
-        this.cameras.main.worldView.y + this.cameras.main.centerY,
-        "cielo"
+        this.cameras.main.worldView.y + this.cameras.main.centerY - 100,
+        "gameOver"
       )
-      .setScale(1.22);
+      .setOrigin(0.5, 0.5)
+      .setScale(3);
 
     this.add
       .text(
         this.cameras.main.worldView.x + this.cameras.main.centerX,
-        this.cameras.main.worldView.y + 100,
-        "Game Over",
-        { fontSize: "50px" }
-      )
-      .setOrigin(0.5, 0.3);
-
-    this.add
-      .text(
-        this.cameras.main.worldView.x + this.cameras.main.centerX,
-        this.cameras.main.worldView.y + 200,
+        this.cameras.main.worldView.y + this.cameras.main.centerY - 20,
         `Your Score was ${this.score}`,
-        { fontSize: "30px" }
+        {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "15px",
+          color: "#fff",
+        }
+      )
+      .setOrigin(0.5, 0.5);
+    this.add
+      .text(
+        this.cameras.main.worldView.x + this.cameras.main.centerX,
+        this.cameras.main.worldView.y + this.cameras.main.centerY,
+        `You lasted ${this.time} seconds`,
+        {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "15px",
+          color: "#fff",
+        }
       )
       .setOrigin(0.5, 0.5);
 
@@ -42,10 +51,14 @@ export default class endMenu extends Phaser.Scene {
       .text(
         this.cameras.main.worldView.x + this.cameras.main.centerX,
         this.cameras.main.worldView.y + 300,
-        `Press R to replay again, or T to go back to the main menu`,
-        { fontSize: "15px" }
+        `Press R to play again, or T to go back to the main menu`,
+        {
+          fontFamily: '"Press Start 2P", monospace',
+          fontSize: "10px",
+          color: "#fff",
+        }
       )
-      .setOrigin(0.5, 0.7);
+      .setOrigin(0.5, 0.5);
 
     this.keydown = this.input.keyboard.addKeys("R");
     this.keydown = this.input.keyboard.addKeys("T");
@@ -53,7 +66,7 @@ export default class endMenu extends Phaser.Scene {
 
   update() {
     this.input.keyboard.on("keydown-R", () => {
-      this.scene.start("game");
+      this.scene.start("game", { firstTime: this.firstTime });
     });
     this.input.keyboard.on("keydown-T", () => {
       this.scene.start("startMenu");
