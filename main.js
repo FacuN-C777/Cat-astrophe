@@ -1,5 +1,5 @@
 import startMenu from "./scenes/openMenu.js";
-import game from "./scenes/Game.js";
+import game from "./scenes/game.js";
 import endMenu from "./scenes/EndMenu.js";
 
 // Create a new Phaser config object
